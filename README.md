@@ -1,6 +1,13 @@
-# LiveReload
+# LiveReload X
+
+This is a [folk][fork] of [lepture/python-livereload][origin] for fixing `forever` delay [issue#125][issue#125]. 
+Future features are not guaranteed.
 
 Reload webpages on changes, without hitting refresh in your browser.
+
+[origin]: https://github.com/lepture/python-livereload
+[fork]: https://github.com/tuanchauict/python-livereload
+[issue#125]: https://github.com/lepture/python-livereload/issues/125
 
 ## Installation
 
@@ -9,7 +16,7 @@ Reload webpages on changes, without hitting refresh in your browser.
 LiveReload is for web developers who know Python. It is available on [PyPI].
 
 ```
-$ pip install livereload
+$ pip install livereloadx
 ```
 
 [pypi]: https://pypi.python.org/pypi/livereload

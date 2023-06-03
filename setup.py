@@ -17,14 +17,14 @@ def version():
 
 
 setup(
-    name='livereload',
+    name='livereloadx',
     version=version(),
     author='Hsiaoming Yang',
     author_email='me@lepture.com',
     url='https://github.com/lepture/python-livereload',
     packages=['livereload', 'livereload.management.commands'],
     description='Python LiveReload is an awesome tool for web developers',
-    long_description_content_type='text/x-rst',
+    long_description_content_type='text/markdown',
     long_description=fread('README.md'),
     entry_points={
         'console_scripts': [
