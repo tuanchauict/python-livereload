@@ -95,7 +95,7 @@ class Watcher:
             if not name:
                 name = getattr(fun, '__name__', 'anonymous')
             logger.info(
-                f"Running task: {name} (delay: {delay}) (delay run: {delay_exe})")
+                f"Register task: {name} (run after: {delay_exe}, delay: {delay})")
             loop = ioloop.IOLoop.current()
             if fun in self._jobs:
                 loop.remove_timeout(self._jobs[fun])
