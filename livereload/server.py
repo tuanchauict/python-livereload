@@ -33,6 +33,7 @@ import errno
 
 if sys.version_info >= (3, 8) and sys.platform == 'win32':
     import asyncio
+
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 logger = logging.getLogger('livereload')
@@ -42,9 +43,11 @@ HEAD_END = b'</head>'
 
 def set_header(fn, name, value):
     """Helper Function to Add HTTP headers to the server"""
+
     def set_default_headers(self, *args, **kwargs):
         fn(self, *args, **kwargs)
         self.set_header(name, value)
+
     return set_default_headers
 
 
@@ -182,6 +185,7 @@ class Server:
                     pyinotify and use INotifyWatcher() to avoid wasted
                     CPU usage.
     """
+
     def __init__(self, app=None, watcher=None):
         self.root = None
 
@@ -207,10 +211,10 @@ class Server:
         :param value: The value of the header field to be defined.
         """
         StaticFileHandler.set_default_headers = set_header(
-                StaticFileHandler.set_default_headers, name, value)
+            StaticFileHandler.set_default_headers, name, value)
         self.SFH = StaticFileHandler
 
-    def watch(self, filepath, func=None, delay=None, ignore=None):
+    def watch(self, filepath, func=None, delay=None, ignore=None, delay_exe=0):
         """Add the given filepath for watcher list.
 
         Once you have initialized a server, watch file changes before
@@ -230,6 +234,7 @@ class Server:
         :param delay: Delay sending the reload message. Use 'forever' to
                       not send it. This is useful to compile sass files to
                       css, but reload on changed css files then only.
+        :param delay_exe: Delay execution of func
         :param ignore: A function return True to ignore a certain pattern of
                        filepath.
         """
@@ -238,7 +243,7 @@ class Server:
             func = shell(func)
             func.name = f"shell: {cmd}"
 
-        self.watcher.watch(filepath, func, delay, ignore=ignore)
+        self.watcher.watch(filepath, func, delay, ignore=ignore, delay_exe=delay_exe)
 
     def application(self, port, host, liveport=None, debug=None,
                     live_css=True):
@@ -268,7 +273,8 @@ class Server:
         if liveport:
             live_script = escape.utf8(live_script % liveport)
         else:
-            live_script = escape.utf8(live_script % "(window.location.port || (window.location.protocol == 'https:' ? 443: 80))")
+            live_script = escape.utf8(
+                live_script % "(window.location.port || (window.location.protocol == 'https:' ? 443: 80))")
 
         web_handlers = self.get_web_handlers(live_script)
 
@@ -337,10 +343,10 @@ class Server:
         if open_url:
             logger.error('Use `open_url_delay` instead of `open_url`')
         if open_url_delay is not None:
-
             def opener():
                 time.sleep(open_url_delay)
                 webbrowser.open(f'http://{host}:{port}')
+
             threading.Thread(target=opener).start()
 
         try:

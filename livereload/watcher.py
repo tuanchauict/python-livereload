@@ -13,6 +13,7 @@ import logging
 import os
 import time
 from inspect import signature
+from tornado import ioloop
 
 try:
     import pyinotify
@@ -24,8 +25,10 @@ logger = logging.getLogger('livereload')
 
 class Watcher:
     """A file watcher registry."""
+
     def __init__(self):
         self._tasks = {}
+        self._jobs = {}
 
         # modification time of filepaths for each task,
         # before and after checking for changes
@@ -54,7 +57,7 @@ class Watcher:
         _, ext = os.path.splitext(filename)
         return ext in ['.pyc', '.pyo', '.o', '.swp']
 
-    def watch(self, path, func=None, delay=0, ignore=None):
+    def watch(self, path, func=None, delay=0, ignore=None, delay_exe=0):
         """Add a task to watcher.
 
         :param path: a filepath or directory path or glob pattern
@@ -62,12 +65,14 @@ class Watcher:
         :param delay: Delay sending the reload message. Use 'forever' to
                       not send it. This is useful to compile sass files to
                       css, but reload on changed css files then only.
+        :param delay_exe: Delay execution of func
         :param ignore: A function return True to ignore a certain pattern of
                        filepath.
         """
         self._tasks[path] = {
             'func': func,
             'delay': delay,
+            'delay_exe': delay_exe,
             'ignore': ignore,
             'mtimes': {},
         }
@@ -85,6 +90,25 @@ class Watcher:
         if self._changes:
             return self._changes.pop()
 
+        def register_job(fun, delay_exe, changed):
+            name = getattr(fun, 'name', None)
+            if not name:
+                name = getattr(fun, '__name__', 'anonymous')
+            logger.info(
+                f"Running task: {name} (delay: {delay}) (delay run: {delay_exe})")
+            loop = ioloop.IOLoop.current()
+            if fun in self._jobs:
+                loop.remove_timeout(self._jobs[fun])
+
+            self._jobs[fun] = loop.call_later(delay_exe, job_exe, fun, changed)
+
+        def job_exe(fun, changed):
+            if len(signature(fun).parameters) > 0 and isinstance(changed, list):
+                fun(changed)
+            else:
+                fun()
+            self._jobs.pop(fun)
+
         # clean filepath
         self.filepath = None
         delays = set()
@@ -98,20 +122,12 @@ class Watcher:
                 if delay and isinstance(delay, float) or delay == 'forever':
                     delays.add(delay)
                 if func:
-                    name = getattr(func, 'name', None)
-                    if not name:
-                        name = getattr(func, '__name__', 'anonymous')
-                    logger.info(
-                        f"Running task: {name} (delay: {delay})")
-                    if len(signature(func).parameters) > 0 and isinstance(changed, list):
-                        func(changed)
-                    else:
-                        func()
+                    register_job(func, item['delay_exe'], changed)
 
-        if delays == {'forever'}:
+        if 'forever' in delays:
             delay = 'forever'
         elif delays:
-            delay = max(delays - {'forever'})
+            delay = max(delays)
         else:
             delay = None
         return self.filepath, delay
